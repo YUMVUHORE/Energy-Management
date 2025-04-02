@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PZEM Power Monitoring Dashboard</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin: 0;
+        }
+        
+        .last-update {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            transition: transform 0.3s;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 0;
+        }
+        
+        .badge {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        
+        .badge-ac {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        .badge-dc {
+            background-color: #e74c3c;
+            color: white;
+        }
+        
+        .metrics {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .metric {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .metric-label {
+            font-size: 0.85rem;
+            color: #7f8c8d;
+            margin-bottom: 5px;
+        }
+        
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        
+        .alarm {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            font-weight: 500;
+        }
+        
+        .alarm-on {
+            background-color: #ffeceb;
+            color: #e74c3c;
+        }
+        
+        .alarm-off {
+            background-color: #edfff2;
+            color: #27ae60;
+        }
+        
+        .alarm i {
+            margin-right: 8px;
+        }
+        
+        .charts {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .chart-card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            height: 300px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 15px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        button.danger {
+            background-color: #e74c3c;
+        }
+        
+        button.danger:hover {
+            background-color: #c0392b;
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .charts {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>PZEM Power Monitoring Dashboard</h1>
+            <div class="last-update">Last updated: <span id="update-time">-</span></div>
+        </header>
+        
+        <div class="controls">
+            <button id="refresh-btn">Refresh Data</button>
+            <button id="reset-energy-btn" class="danger">Reset Energy Counters</button>
+        </div>
+        
+        <div class="dashboard" id="devices-container">
+            <!-- Devices will be populated here via JavaScript -->
+        </div>
+        
+        <div class="charts">
+            <div class="chart-card">
+                <h2>Power Consumption History</h2>
+                <canvas id="power-chart"></canvas>
+            </div>
+            <div class="chart-card">
+                <h2>Energy Consumption</h2>
+                <canvas id="energy-chart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+    <script>
+        // Sample data - in a real application, this would come from the ESP32 via websockets or fetch API
+        const sampleData = {
+            "devices": [
+                {
+                    "id": 1,
+                    "name": "Main AC Supply",
+                    "type": "PZEM-004T",
+                    "address": 1,
+                    "voltage": 230.2,
+                    "current": 2.51,
+                    "power": 550.3,
+                    "energy": 128.45,
+                    "frequency": 50.1,
+                    "pf": 0.92,
+                    "powerAlarm": false
+                },
+                {
+                    "id": 2,
+                    "name": "Solar DC System",
+                    "type": "PZEM-017",
+                    "address": 1,
+                    "voltage": 24.8,
+                    "current": 4.32,
+                    "power": 105.6,
+                    "energy": 45.72,
+                    "highVoltageAlarm": false,
+                    "lowVoltageAlarm": false
+                }
+            ]
+        };
+        
+        // Sample time series data for charts
+        const powerHistory = {
+            labels: ['12:00', '12:05', '12:10', '12:15', '12:20', '12:25', '12:30'],
+            datasets: [
+                {
+                    label: 'AC Power (W)',
+                    data: [520, 535, 550, 542, 547, 551, 550],
+                    borderColor: '#3498db',
+                    backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                    tension: 0.4
+                },
+                {
+                    label: 'DC Power (W)',
+                    data: [98, 102, 107, 104, 103, 106, 106],
+                    borderColor: '#e74c3c',
+                    backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                    tension: 0.4
+                }
+            ]
+        };
+        
+        const energyData = {
+            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+            datasets: [
+                {
+                    label: 'AC Energy (kWh)',
+                    data: [18.2, 17.8, 18.5, 19.0, 18.7, 14.2, 13.9],
+                    backgroundColor: 'rgba(52, 152, 219, 0.7)'
+                },
+                {
+                    label: 'DC Energy (kWh)',
+                    data: [6.3, 6.5, 6.8, 6.7, 6.9, 5.2, 5.0],
+                    backgroundColor: 'rgba(231, 76, 60, 0.7)'
+                }
+            ]
+        };
+        
+        // Function to render device cards
+        function renderDevices(data) {
+            const container = document.getElementById('devices-container');
+            container.innerHTML = '';
+            
+            data.devices.forEach(device => {
+                const isAC = device.type === "PZEM-004T";
+                
+                const cardHtml = `
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">${device.name}</h2>
+                            <span class="badge ${isAC ? 'badge-ac' : 'badge-dc'}">${device.type}</span>
+                        </div>
+                        <div class="metrics">
+                            <div class="metric">
+                                <span class="metric-label">Voltage</span>
+                                <span class="metric-value">${device.voltage.toFixed(1)} V</span>
+                            </div>
+                            <div class="metric">
+                                <span class="metric-label">Current</span>
+                                <span class="metric-value">${device.current.toFixed(2)} A</span>
+                            </div>
+                            <div class="metric">
+                                <span class="metric-label">Power</span>
+                                <span class="metric-value">${device.power.toFixed(1)} W</span>
+                            </div>
+                            <div class="metric">
+                                <span class="metric-label">Energy</span>
+                                <span class="metric-value">${device.energy.toFixed(2)} kWh</span>
+                            </div>
+                            ${isAC ? `
+                            <div class="metric">
+                                <span class="metric-label">Frequency</span>
+                                <span class="metric-value">${device.frequency.toFixed(1)} Hz</span>
+                            </div>
+                            <div class="metric">
+                                <span class="metric-label">Power Factor</span>
+                                <span class="metric-value">${device.pf.toFixed(2)}</span>
+                            </div>
+                            ` : ''}
+                        </div>
+                        ${isAC ? `
+                        <div class="alarm ${device.powerAlarm ? 'alarm-on' : 'alarm-off'}">
+                            <i class="fas ${device.powerAlarm ? 'fa-exclamation-triangle' : 'fa-check-circle'}"></i>
+                            Power Alarm: ${device.powerAlarm ? 'ACTIVE' : 'Normal'}
+                        </div>
+                        ` : `
+                        <div class="alarm ${device.highVoltageAlarm ? 'alarm-on' : 'alarm-off'}">
+                            <i class="fas ${device.highVoltageAlarm ? 'fa-exclamation-triangle' : 'fa-check-circle'}"></i>
+                            High Voltage Alarm: ${device.highVoltageAlarm ? 'ACTIVE' : 'Normal'}
+                        </div>
+                        <div class="alarm ${device.lowVoltageAlarm ? 'alarm-on' : 'alarm-off'}">
+                            <i class="fas ${device.lowVoltageAlarm ? 'fa-exclamation-triangle' : 'fa-check-circle'}"></i>
+                            Low Voltage Alarm: ${device.lowVoltageAlarm ? 'ACTIVE' : 'Normal'}
+                        </div>
+                        `}
+                    </div>
+                `;
+                
+                container.innerHTML += cardHtml;
+            });
+        }
+        
+        // Initialize charts
+        function initCharts() {
+            const powerChartCtx = document.getElementById('power-chart').getContext('2d');
+            const powerChart = new Chart(powerChartCtx, {
+                type: 'line',
+                data: powerHistory,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            title: {
+                                display: true,
+                                text: 'Power (W)'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            const energyChartCtx = document.getElementById('energy-chart').getContext('2d');
+            const energyChart = new Chart(energyChartCtx, {
+                type: 'bar',
+                data: energyData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Energy (kWh)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Update the last refresh time
+        function updateRefreshTime() {
+            const now = new Date();
+            document.getElementById('update-time').textContent = now.toLocaleTimeString();
+        }
+        
+        // Initialize the dashboard
+        window.addEventListener('DOMContentLoaded', () => {
+            // Render devices
+            renderDevices(sampleData);
+            
+            // Initialize charts
+            initCharts();
+            
+            // Set up refresh button
+            document.getElementById('refresh-btn').addEventListener('click', () => {
+                // In a real application, this would fetch new data from the ESP32
+                renderDevices(sampleData);
+                updateRefreshTime();
+            });
+            
+            // Set up energy reset button
+            document.getElementById('reset-energy-btn').addEventListener('click', () => {
+                if (confirm('Are you sure you want to reset all energy counters? This action cannot be undone.')) {
+                    // In a real application, this would send a reset command to the ESP32
+                    alert('Energy counters reset successfully.');
+                    updateRefreshTime();
+                }
+            });
+            
+            // Initial refresh time
+            updateRefreshTime();
+        });
+    </script>
+</body>
+</html>
