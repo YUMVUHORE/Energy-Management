@@ -148,8 +148,22 @@ The library consists of the following components:
 - Jumper wires
 
 ### Design Flowchart and  Diagrams
+ Below are three different flowcharts that provide comprehensive visualization of the PZEMManager library from different perspectives:
+#### 1. PZEMManager Library Architecture Flowchart
+This flowchart provides an overall view of the library architecture, showing:
 
-#### PZEM-004T (AC) Connections to ESP32
+- How the user application interacts with the PZEMManager library
+
+- The internal components of the library and their relationships
+  
+- The flow of data from hardware devices through the software layers
+  
+- The different types of devices and their specific functionality
+  
+- Configuration methods and how they relate to different device types
+
+The chart is organized into logical sections (user application, library core, device communication, and output formats) to help visualize how the components work together.
+![PZEMManager Architecture](./diagrams/Achtecture-Flowchart.mmd)
 
 
 
