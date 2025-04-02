@@ -241,11 +241,19 @@ flowchart TD
     class B,H,D,I,M,N,O,P,Q,R,S,T core;
     class AA,AB,AC hardware;
     class AD,AE,AF,AG,AH output;
-end
 ```
 
 
-#### PZEM-017 (DC) Connections to ESP32
+#### 2. PZEMManager Data Flow Diagram
+This flowchart focuses specifically on how data moves through the system:
+
+- Shows the physical devices and their connection to the ESP32 hardware
+- Illustrates how the device objects communicate with the physical hardware
+- Demonstrates the flow of measurement data through the library components
+- Highlights how user applications interact with the library to get and process data
+- Shows configuration paths and how they affect device settings
+
+This diagram uses color coding to distinguish between physical components, hardware interfaces, software objects, manager components, and application logic.
 
 
 
