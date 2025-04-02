@@ -1,0 +1,75 @@
+flowchart TD
+    subgraph "User Application"
+        A[Arduino Sketch] --- |"Include"| B[PZEMManager.h]
+        A --- |"Initialize"| C[Create Serial Ports]
+        A --- |"Create Manager"| D[PZEMManager Instance]
+        A --- |"Add Devices"| E[Add PZEM-004T / PZEM-017]
+        A --- |"Main Loop"| F[Request Measurements]
+        F --- G[Process/Display Data]
+    end
+
+    subgraph "PZEMManager Library"
+        B --- H[PZEMManager.cpp]
+        
+        D --- |"Manages"| I[Device Array]
+        I --- |"Stores"| J[PZEM Devices]
+        
+        E --- |"Creates"| K["PZEM004Tv30 Object(s)"]
+        E --- |"Creates"| L["PZEM017v1 Object(s)"]
+        
+        F --- |"Calls"| M[getMeasurement]
+        M --- |"Updates"| N[updateMeasurement]
+        N --- |"Type Check"| O{Device Type?}
+        
+        O --- |"PZEM_004T"| P[Read AC Parameters]
+        O --- |"PZEM_017"| Q[Read DC Parameters]
+        
+        P --- |"Get"| R[Voltage, Current, Power, Energy, Frequency, PF]
+        Q --- |"Get"| S[Voltage, Current, Power, Energy, Alarms]
+        
+        R --- |"Store in"| T[PZEMMeasurement]
+        S --- |"Store in"| T
+        
+        M --- |"Returns"| T
+        
+        subgraph "Configuration Methods"
+            U[setAddress]
+            V[resetEnergy]
+            W[setPowerAlarm]
+            X[setHighVoltageAlarm]
+            Y[setLowVoltageAlarm]
+            Z[setShuntType]
+        end
+        
+        U & V --- |"For"| J
+        W --- |"For"| K
+        X & Y & Z --- |"For"| L
+    end
+    
+    subgraph "Device Communication"
+        K --- |"Modbus RTU"| AA[PZEM-004T Hardware]
+        L --- |"Modbus RTU"| AB[PZEM-017 Hardware]
+        
+        AA --- |"Serial"| AC["UART (Serial1/Serial2)"]
+        AB --- |"Serial"| AC
+        
+        AC --- |"Connected to"| C
+    end
+    
+    subgraph "Output Formats"
+        T --- |"Can be returned as"| AD[Raw Measurement Object]
+        T --- |"Can be converted to"| AE[JSON Format]
+        AE --- |"For"| AF[Web Dashboard Integration]
+        AE --- |"For"| AG[MQTT Publishing]
+        AE --- |"For"| AH[API Endpoints]
+    end
+    
+    classDef devices fill:#f9f,stroke:#333,stroke-width:2px;
+    classDef core fill:#bbf,stroke:#333,stroke-width:2px;
+    classDef hardware fill:#bfb,stroke:#333,stroke-width:2px;
+    classDef output fill:#ffb,stroke:#333,stroke-width:2px;
+    
+    class J,K,L devices;
+    class B,H,D,I,M,N,O,P,Q,R,S,T core;
+    class AA,AB,AC hardware;
+    class AD,AE,AF,AG,AH output;
