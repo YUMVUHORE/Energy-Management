@@ -1,0 +1,109 @@
+sequenceDiagram
+    participant User as User Application
+    participant Manager as PZEMManager
+    participant DevArr as Device Array
+    participant P004T as PZEM004Tv30 Object
+    participant P017 as PZEM017v1 Object
+    participant HwAC as PZEM-004T Hardware
+    participant HwDC as PZEM-017 Hardware
+    
+    %% Initialization
+    User->>Manager: Create PZEMManager instance
+    User->>Manager: addPZEM004T(id1, serial1, rxPin, txPin, addr)
+    Manager->>P004T: Create PZEM004Tv30 object
+    Manager->>DevArr: Store device reference
+    User->>Manager: addPZEM017(id2, serial2, addr)
+    Manager->>P017: Create PZEM017v1 object
+    Manager->>DevArr: Store device reference
+    
+    %% Configuration Example
+    User->>Manager: setPowerAlarm(id1, threshold)
+    Manager->>DevArr: Find device by ID
+    DevArr->>Manager: Return PZEM004T reference
+    Manager->>P004T: setPowerAlarm(threshold)
+    P004T->>HwAC: Send Modbus command
+    HwAC->>P004T: Send response
+    P004T->>Manager: Return success/failure
+    Manager->>User: Return result
+    
+    %% Reading Example
+    User->>Manager: getMeasurement(id1)
+    Manager->>DevArr: Find device by ID
+    DevArr->>Manager: Return PZEM004T reference
+    Manager->>Manager: updateMeasurement(index)
+    Manager->>P004T: voltage()
+    P004T->>HwAC: Send Modbus read command
+    HwAC->>P004T: Return voltage value
+    P004T->>Manager: Return voltage
+    
+    Manager->>P004T: current()
+    P004T->>HwAC: Send Modbus read command
+    HwAC->>P004T: Return current value
+    P004T->>Manager: Return current
+    
+    Manager->>P004T: power()
+    P004T->>HwAC: Send Modbus read command
+    HwAC->>P004T: Return power value
+    P004T->>Manager: Return power
+    
+    Manager->>P004T: energy()
+    P004T->>HwAC: Send Modbus read command
+    HwAC->>P004T: Return energy value
+    P004T->>Manager: Return energy
+    
+    Manager->>P004T: frequency()
+    P004T->>HwAC: Send Modbus read command
+    HwAC->>P004T: Return frequency value
+    P004T->>Manager: Return frequency
+    
+    Manager->>P004T: pf()
+    P004T->>HwAC: Send Modbus read command
+    HwAC->>P004T: Return power factor value
+    P004T->>Manager: Return power factor
+    
+    Manager->>P004T: getPowerAlarm()
+    P004T->>HwAC: Send Modbus read command
+    HwAC->>P004T: Return alarm status
+    P004T->>Manager: Return alarm status
+    
+    Manager->>Manager: Store values in measurement array
+    Manager->>User: Return measurement object
+    
+    %% JSON Example
+    User->>Manager: getMeasurementJSON(id2)
+    Manager->>DevArr: Find device by ID
+    DevArr->>Manager: Return PZEM017 reference
+    Manager->>Manager: updateMeasurement(index)
+    Manager->>P017: voltage()
+    P017->>HwDC: Send Modbus read command
+    HwDC->>P017: Return voltage value
+    P017->>Manager: Return voltage
+    
+    Manager->>P017: current()
+    P017->>HwDC: Send Modbus read command
+    HwDC->>P017: Return current value
+    P017->>Manager: Return current
+    
+    Manager->>P017: power()
+    P017->>HwDC: Send Modbus read command
+    HwDC->>P017: Return power value
+    P017->>Manager: Return power
+    
+    Manager->>P017: energy()
+    P017->>HwDC: Send Modbus read command
+    HwDC->>P017: Return energy value
+    P017->>Manager: Return energy
+    
+    Manager->>P017: isHighvoltAlarmOn()
+    P017->>HwDC: Send Modbus read command
+    HwDC->>P017: Return high voltage alarm status
+    P017->>Manager: Return high voltage alarm status
+    
+    Manager->>P017: isLowvoltAlarmOn()
+    P017->>HwDC: Send Modbus read command
+    HwDC->>P017: Return low voltage alarm status
+    P017->>Manager: Return low voltage alarm status
+    
+    Manager->>Manager: Store values in measurement array
+    Manager->>Manager: Convert measurement to JSON
+    Manager->>User: Return JSON string
