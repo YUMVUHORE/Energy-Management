@@ -252,12 +252,131 @@ This flowchart focuses specifically on how data moves through the system:
 - Demonstrates the flow of measurement data through the library components
 - Highlights how user applications interact with the library to get and process data
 - Shows configuration paths and how they affect device settings
+![Data Flow Diagram](./diagrams/data-flow-diagram.svg)
 
 This diagram uses color coding to distinguish between physical components, hardware interfaces, software objects, manager components, and application logic.
-
-
-
 Refer to the detailed wiring instructions document above for complete setup information.
+### 3. PZEMManager Sequence Diagram
+This diagram shows the temporal sequence of operations in the library:
+- Details the initialization process for both device types
+- Illustrates a complete configuration example (setting power alarm)
+- Shows the complete read sequence for retrieving measurements
+- Demonstrates how JSON data is generated
+- Highlights the interaction between each component during these operations
+```mermaid
+sequenceDiagram
+    participant User as User Application
+    participant Manager as PZEMManager
+    participant DevArr as Device Array
+    participant P004T as PZEM004Tv30 Object
+    participant P017 as PZEM017v1 Object
+    participant HwAC as PZEM-004T Hardware
+    participant HwDC as PZEM-017 Hardware
+    
+    %% Initialization
+    User->>Manager: Create PZEMManager instance
+    User->>Manager: addPZEM004T(id1, serial1, rxPin, txPin, addr)
+    Manager->>P004T: Create PZEM004Tv30 object
+    Manager->>DevArr: Store device reference
+    User->>Manager: addPZEM017(id2, serial2, addr)
+    Manager->>P017: Create PZEM017v1 object
+    Manager->>DevArr: Store device reference
+    
+    %% Configuration Example
+    User->>Manager: setPowerAlarm(id1, threshold)
+    Manager->>DevArr: Find device by ID
+    DevArr->>Manager: Return PZEM004T reference
+    Manager->>P004T: setPowerAlarm(threshold)
+    P004T->>HwAC: Send Modbus command
+    HwAC->>P004T: Send response
+    P004T->>Manager: Return success/failure
+    Manager->>User: Return result
+    
+    %% Reading Example
+    User->>Manager: getMeasurement(id1)
+    Manager->>DevArr: Find device by ID
+    DevArr->>Manager: Return PZEM004T reference
+    Manager->>Manager: updateMeasurement(index)
+    Manager->>P004T: voltage()
+    P004T->>HwAC: Send Modbus read command
+    HwAC->>P004T: Return voltage value
+    P004T->>Manager: Return voltage
+    
+    Manager->>P004T: current()
+    P004T->>HwAC: Send Modbus read command
+    HwAC->>P004T: Return current value
+    P004T->>Manager: Return current
+    
+    Manager->>P004T: power()
+    P004T->>HwAC: Send Modbus read command
+    HwAC->>P004T: Return power value
+    P004T->>Manager: Return power
+    
+    Manager->>P004T: energy()
+    P004T->>HwAC: Send Modbus read command
+    HwAC->>P004T: Return energy value
+    P004T->>Manager: Return energy
+    
+    Manager->>P004T: frequency()
+    P004T->>HwAC: Send Modbus read command
+    HwAC->>P004T: Return frequency value
+    P004T->>Manager: Return frequency
+    
+    Manager->>P004T: pf()
+    P004T->>HwAC: Send Modbus read command
+    HwAC->>P004T: Return power factor value
+    P004T->>Manager: Return power factor
+    
+    Manager->>P004T: getPowerAlarm()
+    P004T->>HwAC: Send Modbus read command
+    HwAC->>P004T: Return alarm status
+    P004T->>Manager: Return alarm status
+    
+    Manager->>Manager: Store values in measurement array
+    Manager->>User: Return measurement object
+    
+    %% JSON Example
+    User->>Manager: getMeasurementJSON(id2)
+    Manager->>DevArr: Find device by ID
+    DevArr->>Manager: Return PZEM017 reference
+    Manager->>Manager: updateMeasurement(index)
+    Manager->>P017: voltage()
+    P017->>HwDC: Send Modbus read command
+    HwDC->>P017: Return voltage value
+    P017->>Manager: Return voltage
+    
+    Manager->>P017: current()
+    P017->>HwDC: Send Modbus read command
+    HwDC->>P017: Return current value
+    P017->>Manager: Return current
+    
+    Manager->>P017: power()
+    P017->>HwDC: Send Modbus read command
+    HwDC->>P017: Return power value
+    P017->>Manager: Return power
+    
+    Manager->>P017: energy()
+    P017->>HwDC: Send Modbus read command
+    HwDC->>P017: Return energy value
+    P017->>Manager: Return energy
+    
+    Manager->>P017: isHighvoltAlarmOn()
+    P017->>HwDC: Send Modbus read command
+    HwDC->>P017: Return high voltage alarm status
+    P017->>Manager: Return high voltage alarm status
+    
+    Manager->>P017: isLowvoltAlarmOn()
+    P017->>HwDC: Send Modbus read command
+    HwDC->>P017: Return low voltage alarm status
+    P017->>Manager: Return low voltage alarm status
+    
+    Manager->>Manager: Store values in measurement array
+    Manager->>Manager: Convert measurement to JSON
+    Manager->>User: Return JSON string
+
+```
+This sequence diagram is particularly useful for understanding the order of operations and communication between components.
+Together, these three diagrams provide a comprehensive view of the PZEMManager library from structural, data flow, and temporal perspectives, giving both developers and users a clear understanding of how the system works.
 
 ## Basic Usage
 
