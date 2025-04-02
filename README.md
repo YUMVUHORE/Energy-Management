@@ -163,7 +163,7 @@ This flowchart provides an overall view of the library architecture, showing:
 - Configuration methods and how they relate to different device types
 
 The chart is organized into logical sections (user application, library core, device communication, and output formats) to help visualize how the components work together.
-![PZEMManager Architecture](./diagrams/Achtecture-Flowchart.mmd)
+![PZEMManager Architecture](/diagrams/Achtecture-Flowchart.mmd)
 
 
 
